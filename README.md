@@ -54,9 +54,14 @@ Run the file and get **printed output** on each participant's appointment that i
 ```
 runfile('C:/Users/Zen Juen/Dropbox/Deception_MockCrime/Deception_MockCrime/Email Automation/autocalendar.py', wdir='C:/Users/Zen Juen/Dropbox/Deception_MockCrime/Deception_MockCrime/Email Automation')
 
-Adding calendar event for Subject1 at 19-10-2020, 10.00am-10.30am, B1-26 
-Adding calendar event for Subject2 at 19-10-2020, 10.30am-11.00am, B1-26 
-Adding calendar event for Subject3 at 19-10-2020, 11.00am-11.30am, B1-26 
+Adding calendar event for Subject1 at 11-8-2020, 11.00am-11.30am, B1-26 
+Adding calendar event for Subject2 at 11-8-2020, 10.30am-11.00am, B1-26 
+Adding calendar event for Subject3 at 11-8-2020, 4.00pm-4.30pm, B1-26 
+Adding calendar event for Subject4 at 13-8-2020, 9.30am-10.00am, B1-26 
+Adding calendar event for Subject5 at 12-8-2020, 11.30am-12.00pm, B1-26 
+Adding calendar event for Subject6 at 12-8-2020, 12.00pm-12.30pm, B1-26 
+
+
 ```
 
 
