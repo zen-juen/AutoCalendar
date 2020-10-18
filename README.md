@@ -16,6 +16,12 @@ Check out [AutoRemind](https://github.com/zen-juen/AutoRemind) too!
 
 ## How to Use
 
+### Input Excel Sheet
+You will first need to start with a xlsx file containing information on participants' scheduled slots. For example:
+
+![Screenshot](images/inputxlsx.PNG)
+
+
 ### Modify yourself
 Simply download this repository in the same directory where you keep your own participants file, and modify the `def main()` function in `autocalendar.py`.
 
