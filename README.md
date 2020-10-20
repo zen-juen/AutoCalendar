@@ -6,7 +6,7 @@ Running `autocalendar.py` adds events into Google Calendar by extracting the rel
 Check out [AutoRemind](https://github.com/zen-juen/AutoRemind) too!
 
 ## Code Structure
-- **Access Google API**: `setup_oauth`
+- **Access Google API**: `setup_oauth()`
   - Sets up OAuth 2.0
   - You would need a `client_secret.json` file: you can do this by going to https://console.developers.google.com/apis/credentials. Click on the 'credentials' tab and then download the client secret file.
 - **Extract event details and create event**:
@@ -36,7 +36,7 @@ Simply download this repository in the same directory where you keep your own pa
 ```
 
 - This code creates the event based on the information output of `extract_info`. Modify the `event_name`, `description` (optional),
-`timezone`, `creator_email`, and `calendar_id` accoridngly.
+`timezone`, `creator_email`, and `calendar_id` accordingly.
 
 ```
         event, calendar_id = create_event(event_name='fMRI study Session 1', description='',
