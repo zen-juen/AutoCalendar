@@ -21,8 +21,8 @@ def setup_oath():
     scopes = ['https://www.googleapis.com/auth/calendar']
 
     # Token generated after first time code is run.
-    if os.path.exists('token.pkl'):
-        with open('token.pkl', 'rb') as token:
+    if os.path.exists('../secret/token.pkl'):
+        with open('../secret/token.pkl', 'rb') as token:
             credentials = pickle.load(token)
 
     # If there are no (valid) credentials available, log in and enter authorization code manually
@@ -30,15 +30,13 @@ def setup_oath():
         if credentials and credentials.expired and credentials.refresh_token:
            credentials.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", scopes=scopes)
+            flow = InstalledAppFlow.from_client_secrets_file("../secret/client_secret.json", scopes=scopes)
             credentials = flow.run_local_server(port=0)
 
        # Save the credentials for the next run
-        with open('token.pkl', 'wb') as token:
+        with open('../secret/token.pkl', 'wb') as token:
             pickle.dump(credentials, token)
 
-#    pickle.dump(credentials, open("token.pkl", "wb"))
-#    credentials = pickle.load(open("token.pkl", "rb"))
     service = build("calendar", "v3", credentials=credentials)
 
     return service
@@ -149,7 +147,7 @@ def main(silent=False):
     service = setup_oath()
 
     # Get all participants details
-    participants = preprocess_file(file='C:/Users/Zen Juen/Dropbox/Deception_MockCrime/Deception_MockCrime/Participants Scheduling/Master_Participant_List.xlsx')
+    participants = preprocess_file(file='../data/Master_Participant_List.xlsx')
 
     # Get scheduled details
     dates, start_points, end_points, locations, to_add = extract_info(participants,
