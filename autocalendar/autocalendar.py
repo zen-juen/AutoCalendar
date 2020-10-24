@@ -44,7 +44,7 @@ def setup_oath():
     return service
 
 # =============================================================================
-# Get event information and implement
+# Get event information
 # =============================================================================
 
 
@@ -156,18 +156,20 @@ def create_event(event_name, description, date, start, end, location, timezone, 
 # Execution
 # =============================================================================
 
-def add_event(dates, start_points, end_points, locations, to_add,
+def add_event(service, dates, start_points, end_points, locations, to_add,
               creator_email, event_name='Experiment', description='',
               timezone='Asia/Singapore', calendar_id='primary', silent=False,
               name_col=None, date_col=None, time_col=None, location_col=None,
               starttime_col=None, endtime_col=None):
-    """Execute adding of event into google calendar.
+    """Execute adding of event into google calendar. Set `service` as the resource built from the
+    googleapiclient, e.g., service = autocalendar.setup_oath()
 
     If silent is set to True, print feedback of information that is added, columns to be denoted by
     `*_col` (Otherwise set to None).
     """
+
+    events = []
     if len(to_add) > 1:  # If more than one event to add
-        events = []
         for date, start, end, location in zip(dates, start_points, end_points, locations):
             event, calendar_id = create_event(event_name=event_name, description=description,
                                               date=date, start=start, end=end, location=location,
