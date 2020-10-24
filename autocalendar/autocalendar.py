@@ -160,8 +160,8 @@ def create_event(event_name, description, date, start, end, location, timezone, 
 def add_event(dates, start_points, end_points, locations, to_add,
               event_name='Experiment', description='', timezone='Asia/Singapore',
               creator_email, calendar_id='primary', silent=False,
-              name_col=None, date_col=None, time_col=None, starttime_col=None, endtime_col=None,
-              date_col=None):
+              name_col=None, date_col=None, time_col=None, location_col=None,
+              starttime_col=None, endtime_col=None):
     """Execute adding of event into google calendar.
 
     If silent is set to True, print feedback of information that is added, columns to be denoted by
