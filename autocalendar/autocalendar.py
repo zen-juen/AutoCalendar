@@ -156,19 +156,16 @@ def create_event(event_name, description, date, start, end, location, timezone, 
 # Execution
 # =============================================================================
 
-
 def add_event(dates, start_points, end_points, locations, to_add,
-              event_name='Experiment', description='', timezone='Asia/Singapore',
-              creator_email, calendar_id='primary', silent=False,
+              creator_email, event_name='Experiment', description='',
+              timezone='Asia/Singapore', calendar_id='primary', silent=False,
               name_col=None, date_col=None, time_col=None, location_col=None,
               starttime_col=None, endtime_col=None):
     """Execute adding of event into google calendar.
 
     If silent is set to True, print feedback of information that is added, columns to be denoted by
     `*_col` (Otherwise set to None).
-
     """
-
     if len(to_add) > 1:  # If more than one event to add
         events = []
         for date, start, end, location in zip(dates, start_points, end_points, locations):
@@ -181,8 +178,8 @@ def add_event(dates, start_points, end_points, locations, to_add,
 
     elif len(to_add) == 1:  # If only one event to add
         event, calendar_id = create_event(event_name=event_name, description=description,
-                                          date=dates, start=start_points, end=end_points,
-                                          location=locations,
+                                          date=dates[0], start=start_points[0], end=end_points[0],
+                                          location=locations[0],
                                           timezone=timezone,
                                           creator_email=creator_email,
                                           calendar_id=calendar_id)
