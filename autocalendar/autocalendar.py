@@ -24,6 +24,8 @@ def setup_oath():
     if os.path.exists('../secret/token.pkl'):
         with open('../secret/token.pkl', 'rb') as token:
             credentials = pickle.load(token)
+    else:
+        credentials = object()
 
     # If there are no (valid) credentials available, log in and enter authorization code manually
     if not credentials or not credentials.valid:
@@ -46,23 +48,29 @@ def setup_oath():
 # =============================================================================
 
 
-def preprocess_file(file):
-    """Tidy excel sheet.
+def preprocess_file(file, header_row=1):
+    """Tidy excel sheet containing participants' particulars.
 
-    This function assumes that there are 2 header rows and it is selecting the second row as
-    the main column names of interest, which will be needed in `extract_info`."""
+    If there are multiple header rows, denote the header row to be selected in `header_row` (defaults to 1). For example, `header_row=2` specifies the second row as the main column names of interest, which will be needed in `extract_info()`.
+    """
 
     participants = pd.read_excel(file)
-    participants.columns = participants.iloc[0]
-    participants = participants.reindex(participants.index.drop(0)).reset_index(drop=True)
+
+    if header_row > 1:
+        participants.columns = participants.iloc[header_row-2]
+        participants = participants.reindex(participants.index.drop(0)).reset_index(drop=True)
 
     return participants
 
 
-def extract_info(participants, date_col, time_col, location_col,
+def extract_info(participants, date_col, time_col, location_col, starttime_col=None, endtime_col=None,
                  filter_column=None, select=None):
-    '''Extract date, time, and location of event based on header column names in the
+    """Extract date, time, and location of event based on header column names in the
     participants file (`date_col`, `time_col`, `location_col` respectively).
+
+    It is assumed that `time_col` contains both the start and end time e.g., '10.00am-12.00pm'.
+    If not, specify these details respectively in `starttime_col` and `endtime_col`, in HHMM format.
+    Include 'AM' or 'PM' if not reported in 24HR format.
 
     Defaults to adding all existing participants' scheduled slots in
     the excel sheet into google calendar. To select only some participants,
@@ -71,7 +79,7 @@ def extract_info(participants, date_col, time_col, location_col,
 
     Returns dates, start times, end times, locations and dataframe of filtered participants whose
     details are to be added into google calendar.
-    '''
+    """
 
     if filter_column is not None and select is not None:
         to_add = participants[participants[filter_column] == select]
@@ -82,21 +90,30 @@ def extract_info(participants, date_col, time_col, location_col,
     location = np.array(to_add[location_col])
 
     # Format time
-    timing = np.array(to_add[time_col])
-    timings = np.array([])
-    for t in timing:
-        if '.' in t:
-            t_new = t.replace('.', ':')  # can only detect time with colon
-            timings = np.append(timings, t_new)
-
     start_points = np.array([])
     end_points = np.array([])
-    for i in timings:
-    # split time entry into start and end time based on '-'
-        start = dateutil.parser.parse(i.split('-')[0]).time()
-        end = dateutil.parser.parse(i.split('-')[1]).time()
-        start_points = np.append(start_points, start)
-        end_points = np.append(end_points, end)
+
+    if not starttime_col and not endtime_col:
+        timing = np.array(to_add[time_col])
+        timings = np.array([])
+        for t in timing:
+            if '.' in t:
+                t_new = t.replace('.', ':')  # can only detect time with colon
+                timings = np.append(timings, t_new)
+
+        for i in timings:
+        # split time entry into start and end time based on '-'
+            start = dateutil.parser.parse(i.split('-')[0]).time()
+            end = dateutil.parser.parse(i.split('-')[1]).time()
+            start_points = np.append(start_points, start)
+            end_points = np.append(end_points, end)
+
+    else:
+        starttime_col = [start.replace('.', ':') for start in starttime_col]
+        start_points = np.append(start_points, starttime_col)
+        endtime_col = [end.replace('.', ':') for end in endtime_col]
+        end_points = np.append(end_points, endtime_col)
+
 
     return date, start_points, end_points, location, to_add
 
@@ -136,47 +153,41 @@ def create_event(event_name, description, date, start, end, location, timezone, 
 
 
 # =============================================================================
-# Workflow and execution
+# Execution
 # =============================================================================
 
 
+def add_event(dates, start_points, end_points, locations, to_add,
+              event_name='Experiment', description='', timezone='Asia/Singapore',
+              creator_email, calendar_id='primary', silent=False,
+              name_col=None, date_col=None, time_col=None, starttime_col=None, endtime_col=None,
+              date_col=None):
+    """Execute adding of event into google calendar.
 
-def main(silent=False):
+    If silent is set to True, print feedback of information that is added, columns to be denoted by
+    `*_col` (Otherwise set to None).
 
-    # Set up OAuth
-    service = setup_oath()
+    """
 
-    # Get all participants details
-    participants = preprocess_file(file='../data/Master_Participant_List.xlsx')
-
-    # Get scheduled details
-    dates, start_points, end_points, locations, to_add = extract_info(participants,
-                                                                      date_col='Date_Session1',
-                                                                      time_col='Timeslot_Session1',
-                                                                      location_col='Location_Session1',
-                                                                      filter_column='Calendar_Event',
-                                                                      select='No')
-    # select as No because it represents that the 'Calendar_Event' has not been added yet.
-
-    # Create event
-    if len(dates) > 1: # if more than one participant to add:
+    if len(to_add) > 1:  # If more than one event to add
         events = []
         for date, start, end, location in zip(dates, start_points, end_points, locations):
-            event, calendar_id = create_event(event_name='fMRI study Session 1', description='',
+            event, calendar_id = create_event(event_name=event_name, description=description,
                                               date=date, start=start, end=end, location=location,
-                                              timezone='Asia/Singapore',
-                                              creator_email='decisiontask.study@gmail.com',
-                                              calendar_id='Lab Use (NTU)')
+                                              timezone=timezone,
+                                              creator_email=creator_email,
+                                              calendar_id=calendar_id)
             events.append(event)
-    else:
-        event, calendar_id = create_event(event_name='fMRI study Session 1', description='',
+
+    elif len(to_add) == 1:  # If only one event to add
+        event, calendar_id = create_event(event_name=event_name, description=description,
                                           date=dates, start=start_points, end=end_points,
                                           location=locations,
-                                          timezone='Asia/Singapore',
-                                          creator_email='decisiontask.study@gmail.com',
-                                          calendar_id='Lab Use (NTU)')
+                                          timezone=timezone,
+                                          creator_email=creator_email,
+                                          calendar_id=calendar_id)
+        events.append(event)
 
-    # Execute
     # If 'calendar_id' in `create_event` is set to primary, then use primary calendar, if not
     # input the string of the calendar name that you intend to use.
     result = service.calendarList().list().execute()
@@ -186,10 +197,9 @@ def main(silent=False):
             if dictionary['summary'] == calendar_id:
                 choose.append(dictionary['id'])
         calendar_id = choose[0]
-    else:
-        calendar_id='primary'
 
-    if len(dates) > 1:
+    # Execute
+    if len(to_add) > 1:
         for i in events:
             service.events().insert(calendarId=calendar_id, body=i).execute()
     else:
@@ -197,16 +207,13 @@ def main(silent=False):
 
     # Print output
     if not silent:
-        for name in to_add['Participant Name']:
-            info_date = to_add['Date_Session1'][to_add['Participant Name'] == name].iloc[0].date().strftime("%d-%m-%Y")
-            info_time = to_add['Timeslot_Session1'][to_add['Participant Name'] == name].iloc[0]
-            info_location = to_add['Location_Session1'][to_add['Participant Name'] == name].iloc[0]
+        for name in to_add[name_col]:
+            info_date = to_add[date_col][to_add[name_col] == name].iloc[0].date().strftime("%d-%m-%Y")
+            if not starttime_col and not endtime_col:
+                info_time = to_add[time_col][to_add[name_col] == name].iloc[0]
+            else:
+                info_time = to_add[starttime_col][to_add[name_col] == name].iloc[0] + ' - ' + to_add[endtime_col][to_add[name_col] == name].iloc[0]
+            info_location = to_add[location_col][to_add[name_col] == name].iloc[0]
 
             print('Adding calendar event for ' + f'{name} ' + 'at ' + f'{info_date}, '
                   + f'{info_time}, ' + f'{info_location} ')
-
-
-
-
-if __name__ == "__main__":
-    main(silent=False)
