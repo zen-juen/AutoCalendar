@@ -1,11 +1,11 @@
 import autocalendar as autocalendar
 
 # Set up Oauth to access Google API
-service = autocalendar.setup_oath()
+service = autocalendar.setup_oath(token_path='../../token.pkl',
+                                  client_path='../../client_secret.json')
 
 # Read and tidy excel sheet
-participants = autocalendar.preprocess_file('../../Participants Scheduling/Master_Participant_List.xlsx',
-                                            header_row=2)
+participants = autocalendar.preprocess_file('../../../Participants Scheduling/Master_Participant_List.xlsx', header_row=2)
 
 ### Session 1
 

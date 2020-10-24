@@ -15,28 +15,28 @@ from datetime import datetime
 # Initialize Google API Console Credentials
 # =============================================================================
 
-def setup_oath():
-
+def setup_oath(token_path, client_path):
+    """
+    Path containing token.pkl and client_secret.json respectively.
+    """
     # Set up credentials
     scopes = ['https://www.googleapis.com/auth/calendar']
 
     # Token generated after first time code is run.
-    if os.path.exists('../secret/token.pkl'):
-        with open('../secret/token.pkl', 'rb') as token:
+    if os.path.exists(token_path):
+        with open(token_path, 'rb') as token:
             credentials = pickle.load(token)
-    else:
-        credentials = object()
 
     # If there are no (valid) credentials available, log in and enter authorization code manually
     if not credentials or not credentials.valid:
         if credentials and credentials.expired and credentials.refresh_token:
-           credentials.refresh(Request())
+            credentials.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file("../secret/client_secret.json", scopes=scopes)
+            flow = InstalledAppFlow.from_client_secrets_file(client_path, scopes=scopes)
             credentials = flow.run_local_server(port=0)
 
        # Save the credentials for the next run
-        with open('../secret/token.pkl', 'wb') as token:
+        with open(token_path, 'wb') as token:
             pickle.dump(credentials, token)
 
     service = build("calendar", "v3", credentials=credentials)
