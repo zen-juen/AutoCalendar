@@ -13,6 +13,7 @@ Check out [AutoRemind](https://github.com/zen-juen/AutoRemind) too!
   - `preprocess_file()`: preprocesses the input excel sheet (containing participants' scheduled slots)
   - `extract_info()`: extracts date, time and location based on header column names in the participants file. Argument `filter_column` can also be activated to select only some participants to be added into google calendar.
   - `create_event()`: prepares event details ready for execution. Argument `calendar_id` (defaults to 'primary') can also be modified according to which active google calendar to use by simply specifying the name of the calendar.
+  - `add_event()`: executes adding of event into calendar.
 
 ## How to Use
 
@@ -22,45 +23,38 @@ You will first need to start with a xlsx file containing information on particip
 ![Screenshot](images/inputxlsx.PNG)
 
 
-### Modify yourself
-Simply download this repository in the same directory where you keep your own participants file, and modify the `def main()` function in `autocalendar.py`.
-
-- Here, change the `date_col`, `time_col`, `location_col` accordingly. This code extracts out only participants where the `Calendar_Event` column is specified as 'No' (`select`) (meaning that their events have not been added yet to the calendar).
-```
-    dates, start_points, end_points, locations, to_add = extract_info(participants,
-                                                                      date_col='Date_Session1',
-                                                                      time_col='Timeslot_Session1',
-                                                                      location_col='Location_Session1',
-                                                                      filter_column='Calendar_Event',
-                                                                      select='No')
-```
-
-- This code creates the event based on the information output of `extract_info`. Modify the `event_name`, `description` (optional),
-`timezone`, `creator_email`, and `calendar_id` accordingly.
+### Try it yourself
 
 ```
-        event, calendar_id = create_event(event_name='fMRI study Session 1', description='',
-                                          date=dates, start=start_points, end=end_points,
-                                          location=locations,
-                                          timezone='Asia/Singapore',
-                                          creator_email='decisiontask.study@gmail.com',
-                                          calendar_id='Lab Use (NTU)')
+import autocalendar as autocalendar
+
+# Set up Oauth to access Google API
+service = autocalendar.setup_oath(token_path='../../token.pkl',
+                                  client_path='../../client_secret.json')
+
+# Read and tidy excel sheet
+participants = autocalendar.preprocess_file('../../../Participants Scheduling/Master_Participant_List.xlsx', header_row=2)
+
+# Extract info
+dates, start_points, end_points, locations, to_add = autocalendar.extract_info(participants, date_col='Date_Session1', time_col='Timeslot_Session1', location_col='Location_Session1', filter_column='Calendar_Event', select='No')
+
+# Execute
+autocalendar.add_event(service, dates, start_points, end_points, locations, to_add,
+                       event_name='fMRI study Session 1', description='', timezone='Asia/Singapore',
+                       creator_email='decisiontask.study@gmail.com', calendar_id='Lab Use (NTU)',
+                       silent=False, name_col='Participant Name', date_col='Date_Session1',
+                       location_col='Location_Session1', time_col='Timeslot_Session1')
 
 ```
 
-### Run `autocalendar.py`
-
-Run the file and get **printed output** on each participant's appointment that is added into Google Calendar!
+If `silent` in `add_event()` is set to False, you will also get **printed output** on each participant's appointment that is added into Google Calendar!
 ```
-runfile('C:/Users/Zen Juen/Dropbox/Deception_MockCrime/Deception_MockCrime/Email Automation/autocalendar.py', wdir='C:/Users/Zen Juen/Dropbox/Deception_MockCrime/Deception_MockCrime/Email Automation')
-
 Adding calendar event for Subject1 at 11-8-2020, 11.00am-11.30am, B1-26 
 Adding calendar event for Subject2 at 11-8-2020, 10.30am-11.00am, B1-26 
 Adding calendar event for Subject3 at 11-8-2020, 4.00pm-4.30pm, B1-26 
 Adding calendar event for Subject4 at 13-8-2020, 9.30am-10.00am, B1-26 
 Adding calendar event for Subject5 at 12-8-2020, 11.30am-12.00pm, B1-26 
 Adding calendar event for Subject6 at 12-8-2020, 12.00pm-12.30pm, B1-26 
-
 
 ```
 
