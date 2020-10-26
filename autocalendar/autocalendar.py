@@ -8,7 +8,101 @@ import numpy as np
 import pickle
 import os.path
 import dateutil.parser
+import calendar
 from datetime import datetime
+
+# =============================================================================
+# Scheduling tool
+# =============================================================================
+def autoallocate(file, transpose=True, filename='allocations', export_to='xlsx'):
+    """Read and parse a downloaded doode poll (in '.xls' or '.xlsx') where participants are
+    able to choose as many timeslots as possible. Automatically allocate participants to a
+    slot based on their chosen availabilities. Returns dataframe containing the participants'
+    allocated slots.
+
+    Parameters
+    ----------
+    file : str
+        Path containing doodle poll file
+    transpose : bool
+        Exported dataframe will be in long format if True.
+    filename : str
+        Name of the file containing the participants' allocations.
+    export_to : str
+        Exported file type. Can be 'xlsx' or 'csv'.
+    """
+
+    # Read and parse doodle poll
+    poll = pd.read_excel(file)
+    poll.loc[2:4,].fillna(method='ffill', axis=1, inplace=True)
+    poll = poll.set_index(poll.columns[0])
+
+    # Extract all possible datetimes
+    datetimes = []
+    for month, date, time in zip(poll.iloc[2], poll.iloc[3], poll.iloc[4]):
+        exact_date = month + ' ' + date
+        parsed_date = dateutil.parser.parse(exact_date)
+        day = calendar.day_name[parsed_date.weekday()]
+        dt = parsed_date.strftime("%d %B") + ', ' + day + ', ' + time
+        datetimes.append(dt)
+
+    poll.columns = datetimes
+    poll = poll.iloc[5:]
+
+    # Create empty df for appending assigned dates
+    empty_df = pd.DataFrame(index=['Participant'], columns=datetimes)
+
+    # Allocate slots
+    assignments = []
+
+    for assigned_date in poll.columns:
+        # Number of subjects who chose the slot
+        n_selections = poll[assigned_date].astype(str).str.contains('OK').sum()
+
+        if n_selections == 0:
+            empty_df[assigned_date] = np.nan
+
+        elif n_selections == 1:
+            single_name = poll[poll[assigned_date] == 'OK'].index.values[0]
+            if single_name not in assignments:
+                # If subject has not been assigned yet
+                empty_df[assigned_date] = single_name
+                assignments.append(single_name)
+            else:
+                empty_df[assigned_date] = np.nan
+
+        elif n_selections > 1:
+            multiple_names = poll[poll[assigned_date] == 'OK'].index.values
+            chosen_name = np.random.choice(multiple_names)
+            if chosen_name not in assignments:
+                empty_df[assigned_date] = chosen_name
+                assignments.append(chosen_name)
+            else:
+                chosen_name_2 = np.random.choice(multiple_names[multiple_names != chosen_name])
+                if chosen_name_2 not in assignments:
+                    empty_df[assigned_date] = chosen_name_2
+                    assignments.append(chosen_name_2)
+                else:
+                    empty_df[assigned_date] = np.nan
+
+    allocations = empty_df.copy()
+    if transpose:
+        allocations = pd.DataFrame.transpose(allocations)
+        allocations = allocations.rename(columns={ allocations.columns[0]: "Participant" })
+
+    # Export
+    if export_to == 'csv':
+        allocations.to_csv(filename + '.csv')
+    elif export_to == 'xlsx':
+        allocations.to_excel(filename + '.xlsx')
+
+    # Feedback
+    participants = poll.index[poll.index != 'Count'].tolist()
+    for participant in participants:
+        if participant not in assignments:
+            print(f'{participant}' + ' could not be allocated.')
+    if len(np.intersect1d(participants, assignments)) == len(participants):
+        print('All participants successfully allocated.')
 
 
 # =============================================================================
