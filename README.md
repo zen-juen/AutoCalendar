@@ -6,6 +6,10 @@ Running `autocalendar.py` adds events into Google Calendar by extracting the rel
 Check out [AutoRemind](https://github.com/zen-juen/AutoRemind) too!
 
 ## Code Structure
+
+- **Schedule Participants**: `autoallocate()`
+  - Parses a doodle poll spreadsheet and automatically allocates participants to an available slot (Useful if participants are told to choose as many available slots as they can)
+
 - **Access Google API**: `setup_oauth()`
   - Sets up OAuth 2.0
   - You would need a `client_secret.json` file: you can do this by going to https://console.developers.google.com/apis/credentials. Click on the 'credentials' tab and then download the client secret file.
@@ -15,15 +19,29 @@ Check out [AutoRemind](https://github.com/zen-juen/AutoRemind) too!
   - `create_event()`: prepares event details ready for execution. Argument `calendar_id` (defaults to 'primary') can also be modified according to which active google calendar to use by simply specifying the name of the calendar.
   - `add_event()`: executes adding of event into calendar.
 
+
 ## How to Use
 
-### Input Excel Sheet
+### Try it yourself: Automatic Scheduling of Participants
+
+Download your doodle poll into an excel spreadsheet, like so:
+
+![Screenshot1](images/pollxls.PNG)
+
+```
+import autocalendar as autocalendar
+
+autocalendar.autoallocate('scheduled.xlsx')
+All participants successfully allocated.
+```
+A 'scheduled.xlsx' file containing participants' final allocated slots is exported with one line of code. 
+Feedback is provided on whether participants are successfully allocated or not, and the name of any participant who is not allocated will be printed.
+
+### Try it yourself: Adding Events
+
 You will first need to start with a xlsx file containing information on participants' scheduled slots. For example:
 
 ![Screenshot](images/inputxlsx.PNG)
-
-
-### Try it yourself
 
 ```
 import autocalendar as autocalendar
@@ -57,6 +75,8 @@ Adding calendar event for Subject5 at 12-8-2020, 11.30am-12.00pm, B1-26
 Adding calendar event for Subject6 at 12-8-2020, 12.00pm-12.30pm, B1-26 
 
 ```
+
+
 
 
 ## Future Direction
