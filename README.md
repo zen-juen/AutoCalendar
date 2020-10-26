@@ -22,7 +22,7 @@ Check out [AutoRemind](https://github.com/zen-juen/AutoRemind) too!
 
 ## How to Use
 
-### Try it yourself: Automatic Scheduling of Participants
+### 1) Try it yourself: Automatic Scheduling of Participants
 
 Download your doodle poll into an excel spreadsheet, like so:
 
@@ -37,7 +37,7 @@ All participants successfully allocated.
 A 'scheduled.xlsx' file containing participants' final allocated slots is exported with one line of code. 
 Feedback is provided on whether participants are successfully allocated or not, and the name of any participant who is not allocated will be printed.
 
-### Try it yourself: Adding Events
+### 2) Try it yourself: Adding Events
 
 You will first need to start with a xlsx file containing information on participants' scheduled slots. For example:
 
@@ -58,8 +58,8 @@ dates, start_points, end_points, locations, to_add = autocalendar.extract_info(p
 
 # Execute
 autocalendar.add_event(service, dates, start_points, end_points, locations, to_add,
-                       event_name='fMRI study Session 1', description='', timezone='Asia/Singapore',
-                       creator_email='decisiontask.study@gmail.com', calendar_id='Lab Use (NTU)',
+                       event_name='MRI study Session 1', description='', timezone='Asia/Singapore',
+                       creator_email='mristudy@gmail.com', calendar_id='NTU Calendar',
                        silent=False, name_col='Participant Name', date_col='Date_Session1',
                        location_col='Location_Session1', time_col='Timeslot_Session1')
 
