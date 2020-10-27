@@ -29,7 +29,8 @@ def autoallocate(file, transpose=True, filename='allocations', export_to='xlsx')
     filename : str
         Name of the file containing the participants' allocations.
     export_to : str
-        Exported file type. Can be 'xlsx' or 'csv'.
+        Exported file type. Can be 'xlsx' or 'csv'. Can also be set to 'False', which will
+        simply return the dataframe of allocations.
     """
 
     # Read and parse doodle poll
@@ -95,6 +96,8 @@ def autoallocate(file, transpose=True, filename='allocations', export_to='xlsx')
         allocations.to_csv(filename + '.csv')
     elif export_to == 'xlsx':
         allocations.to_excel(filename + '.xlsx')
+    elif export_to is False:
+        return allocations
 
     # Feedback
     participants = poll.index[poll.index != 'Count'].tolist()
