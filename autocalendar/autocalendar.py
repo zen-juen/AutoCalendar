@@ -14,7 +14,7 @@ from datetime import datetime
 # =============================================================================
 # Scheduling tool
 # =============================================================================
-def autoallocate(file, transpose=True, filename='allocations', export_to='xlsx'):
+def autoallocate(file, transpose=True, allocate_type='single', filename='', export_to='xlsx'):
     """Read and parse a downloaded doode poll (in '.xls' or '.xlsx') where participants are
     able to choose as many timeslots as possible. Automatically allocate participants to a
     slot based on their chosen availabilities. Returns dataframe containing the participants'
@@ -24,6 +24,9 @@ def autoallocate(file, transpose=True, filename='allocations', export_to='xlsx')
     ----------
     file : str
         Path containing doodle poll file
+    allocate_type : str
+        The type of allocation. If 'single', allocates one unique slot to each participant. If
+        'multiple', allocates multiple slots to each participant.
     transpose : bool
         Exported dataframe will be in long format if True.
     filename : str
@@ -56,36 +59,56 @@ def autoallocate(file, transpose=True, filename='allocations', export_to='xlsx')
     # Allocate slots
     assignments = []
 
-    for assigned_date in poll.columns:
-        # Number of subjects who chose the slot
-        n_selections = poll[assigned_date].astype(str).str.contains('OK').sum()
+    # single allocations
+    if allocate_type == 'single':
+        for assigned_date in poll.columns:
+            # Number of subjects who chose the slot
+            n_selections = poll[assigned_date].astype(str).str.contains('OK').sum()
 
-        if n_selections == 0:
-            empty_df[assigned_date] = np.nan
+            if n_selections == 0:
+                empty_df[assigned_date] = 'No One Assigned'
 
-        elif n_selections == 1:
-            single_name = poll[poll[assigned_date] == 'OK'].index.values[0]
-            if single_name not in assignments:
-                # If subject has not been assigned yet
+            elif n_selections == 1:
+                single_name = poll[poll[assigned_date] == 'OK'].index.values[0]
+                if single_name not in assignments:
+                    # If subject has not been assigned yet
+                    empty_df[assigned_date] = single_name
+                    assignments.append(single_name)
+                else:
+                    empty_df[assigned_date] = 'No One Assigned'
+
+            elif n_selections > 1:
+                multiple_names = poll[poll[assigned_date] == 'OK'].index.values
+                chosen_name = np.random.choice(multiple_names)
+                if chosen_name not in assignments:
+                    empty_df[assigned_date] = chosen_name
+                    assignments.append(chosen_name)
+                else:
+                    chosen_name_2 = np.random.choice(multiple_names[multiple_names != chosen_name])
+                    if chosen_name_2 not in assignments:
+                        empty_df[assigned_date] = chosen_name_2
+                        assignments.append(chosen_name_2)
+                    else:
+                        empty_df[assigned_date] = 'No One Assigned'
+
+    # multiple allocations
+    elif allocate_type == 'multiple':
+        for assigned_date in poll.columns:
+            n_selections = poll[assigned_date].astype(str).str.contains('OK').sum()
+
+            if n_selections == 0:
+                empty_df[assigned_date] = 'No One Assigned'
+            elif n_selections == 1:
+                single_name = poll[poll[assigned_date] == 'OK'].index.values[0]
                 empty_df[assigned_date] = single_name
                 assignments.append(single_name)
-            else:
-                empty_df[assigned_date] = np.nan
-
-        elif n_selections > 1:
-            multiple_names = poll[poll[assigned_date] == 'OK'].index.values
-            chosen_name = np.random.choice(multiple_names)
-            if chosen_name not in assignments:
+            elif n_selections > 1:
+                multiple_names = poll[poll[assigned_date] == 'OK'].index.values
+                chosen_name = np.random.choice(multiple_names[multiple_names != max(enumerate(assignments))[1]])
                 empty_df[assigned_date] = chosen_name
                 assignments.append(chosen_name)
-            else:
-                chosen_name_2 = np.random.choice(multiple_names[multiple_names != chosen_name])
-                if chosen_name_2 not in assignments:
-                    empty_df[assigned_date] = chosen_name_2
-                    assignments.append(chosen_name_2)
-                else:
-                    empty_df[assigned_date] = np.nan
 
+    # prepare output
     allocations = empty_df.copy()
     if transpose:
         allocations = pd.DataFrame.transpose(allocations)
