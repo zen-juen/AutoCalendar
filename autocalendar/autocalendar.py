@@ -34,6 +34,11 @@ def autoallocate(file, transpose=True, allocate_type='single', filename='', expo
     export_to : str
         Exported file type. Can be 'xlsx' or 'csv'. Can also be set to 'False', which will
         simply return the dataframe of allocations.
+
+    Examples
+    --------
+    file = '../../../Student RAs Availability/Doodle_3to30Nov.xls'
+    allocations = autocalendar.autoallocate(file, transpose=False, allocate_type='multiple', export_to=False)
     """
 
     # Read and parse doodle poll
@@ -43,18 +48,24 @@ def autoallocate(file, transpose=True, allocate_type='single', filename='', expo
 
     # Extract all possible datetimes
     datetimes = []
+    dates = []
+    times = []
     for month, date, time in zip(poll.iloc[2], poll.iloc[3], poll.iloc[4]):
         exact_date = month + ' ' + date
         parsed_date = dateutil.parser.parse(exact_date)
-        day = calendar.day_name[parsed_date.weekday()]
-        dt = parsed_date.strftime("%d %B") + ', ' + day + ', ' + time
+#        day = calendar.day_name[parsed_date.weekday()]
+        dt = parsed_date.strftime("%d/%m/%y") + ', ' + time
         datetimes.append(dt)
+        dates.append(parsed_date)
+#        days.append(day)
+        times.append(time)
 
     poll.columns = datetimes
     poll = poll.iloc[5:]
 
     # Create empty df for appending assigned dates
-    empty_df = pd.DataFrame(index=['Participant'], columns=datetimes)
+    empty_df = pd.DataFrame(index=['Timeslots', 'Participant'], columns=datetimes)
+    empty_df.iloc[0] = times
 
     # Allocate slots
     assignments = []
@@ -66,30 +77,30 @@ def autoallocate(file, transpose=True, allocate_type='single', filename='', expo
             n_selections = poll[assigned_date].astype(str).str.contains('OK').sum()
 
             if n_selections == 0:
-                empty_df[assigned_date] = 'No One Assigned'
+                empty_df[assigned_date].Participant = 'No One Assigned'
 
             elif n_selections == 1:
                 single_name = poll[poll[assigned_date] == 'OK'].index.values[0]
                 if single_name not in assignments:
                     # If subject has not been assigned yet
-                    empty_df[assigned_date] = single_name
+                    empty_df[assigned_date].Participant = single_name
                     assignments.append(single_name)
                 else:
-                    empty_df[assigned_date] = 'No One Assigned'
+                    empty_df[assigned_date].Participant = 'No One Assigned'
 
             elif n_selections > 1:
                 multiple_names = poll[poll[assigned_date] == 'OK'].index.values
                 chosen_name = np.random.choice(multiple_names)
                 if chosen_name not in assignments:
-                    empty_df[assigned_date] = chosen_name
+                    empty_df[assigned_date].Participant = chosen_name
                     assignments.append(chosen_name)
                 else:
                     chosen_name_2 = np.random.choice(multiple_names[multiple_names != chosen_name])
                     if chosen_name_2 not in assignments:
-                        empty_df[assigned_date] = chosen_name_2
+                        empty_df[assigned_date].Participant = chosen_name_2
                         assignments.append(chosen_name_2)
                     else:
-                        empty_df[assigned_date] = 'No One Assigned'
+                        empty_df[assigned_date].Participant = 'No One Assigned'
 
     # multiple allocations
     elif allocate_type == 'multiple':
@@ -97,22 +108,26 @@ def autoallocate(file, transpose=True, allocate_type='single', filename='', expo
             n_selections = poll[assigned_date].astype(str).str.contains('OK').sum()
 
             if n_selections == 0:
-                empty_df[assigned_date] = 'No One Assigned'
+                empty_df[assigned_date].Participant = 'No One Assigned'
             elif n_selections == 1:
                 single_name = poll[poll[assigned_date] == 'OK'].index.values[0]
-                empty_df[assigned_date] = single_name
+                empty_df[assigned_date].Participant = single_name
                 assignments.append(single_name)
             elif n_selections > 1:
                 multiple_names = poll[poll[assigned_date] == 'OK'].index.values
                 chosen_name = np.random.choice(multiple_names[multiple_names != max(enumerate(assignments))[1]])
-                empty_df[assigned_date] = chosen_name
+                empty_df[assigned_date].Participant = chosen_name
                 assignments.append(chosen_name)
 
     # prepare output
     allocations = empty_df.copy()
+    allocations.columns = allocations.columns.str.split(', ').str[0]  # Only dates as header row
+
     if transpose:
         allocations = pd.DataFrame.transpose(allocations)
-        allocations = allocations.rename(columns={ allocations.columns[0]: "Participant" })
+        allocations = allocations.rename(columns={allocations.columns[0]: 'Timeslots' })
+        allocations.index.names = ['Date']
+        allocations = allocations.reset_index(level='Date')
 
     # Export
     if export_to == 'csv':
@@ -183,11 +198,12 @@ def preprocess_file(file, header_row=1):
     return participants
 
 
-def extract_info(participants, date_col, time_col, location_col, starttime_col=None, endtime_col=None,
+def extract_info(participants, date_col, time_col, location_col=None, starttime_col=None, endtime_col=None,
                  filter_column=None, select=None):
     """Extract date, time, and location of event based on header column names in the
     participants file (`date_col`, `time_col`, `location_col` respectively).
 
+    For `date_col`, if dates are not datevalues in excel, ensure the formatting of the date is in 'DD/MM/YY' format.
     It is assumed that `time_col` contains both the start and end time e.g., '10.00am-12.00pm'.
     If not, specify these details respectively in `starttime_col` and `endtime_col`, in HHMM format.
     Include 'AM' or 'PM' if not reported in 24HR format.
@@ -206,8 +222,17 @@ def extract_info(participants, date_col, time_col, location_col, starttime_col=N
     else:
         to_add = participants
 
-    date = np.array(to_add[date_col])
-    location = np.array(to_add[location_col])
+    # Format date
+    dates = np.array(to_add[date_col])
+    dates_list = np.array([])
+    for i in dates:
+        if isinstance(i, str):  # convert to datetime obj
+            date = dateutil.parser.parse(i, dayfirst=True).date()
+            dates_list = np.append(dates_list, date)
+
+    # Format location (optional)
+    if location_col:
+        location = np.array(to_add[location_col])
 
     # Format time
     start_points = np.array([])
@@ -216,15 +241,22 @@ def extract_info(participants, date_col, time_col, location_col, starttime_col=N
     if not starttime_col and not endtime_col:
         timing = np.array(to_add[time_col])
         timings = np.array([])
+
+        # Formatting: detect time with colon
         for t in timing:
             if '.' in t:
-                t_new = t.replace('.', ':')  # can only detect time with colon
+                t_new = t.replace('.', ':')
                 timings = np.append(timings, t_new)
+            else:
+                timings = timing
 
         for i in timings:
-        # split time entry into start and end time based on '-'
-            start = dateutil.parser.parse(i.split('-')[0]).time()
-            end = dateutil.parser.parse(i.split('-')[1]).time()
+            if ' ' in i:  # split time entry based on space ' '
+                start = dateutil.parser.parse(i.split(' ')[0]).time()
+                end = dateutil.parser.parse(i.split(' ')[2]).time()
+            elif '-' in i:  # split time entry into start and end time based on '-'
+                start = dateutil.parser.parse(i.split('-')[0]).time()
+                end = dateutil.parser.parse(i.split('-')[1]).time()
             start_points = np.append(start_points, start)
             end_points = np.append(end_points, end)
 
@@ -234,8 +266,10 @@ def extract_info(participants, date_col, time_col, location_col, starttime_col=N
         endtime_col = [end.replace('.', ':') for end in endtime_col]
         end_points = np.append(end_points, endtime_col)
 
-
-    return date, start_points, end_points, location, to_add
+    if location_col:
+        return dates_list, start_points, end_points, location, to_add
+    else:
+        return dates_list, start_points, end_points, to_add
 
 
 def create_event(event_name, description, date, start, end, location, timezone, creator_email,
