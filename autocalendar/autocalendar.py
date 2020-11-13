@@ -14,7 +14,7 @@ from datetime import datetime
 # =============================================================================
 # Scheduling tool
 # =============================================================================
-def autoallocate(file, transpose=True, allocate_type='single', filename='', export_to='xlsx'):
+def autoallocate(file, allocate_type='single', filename='', export_to='xlsx'):
     """Read and parse a downloaded doode poll (in '.xls' or '.xlsx') where participants are
     able to choose as many timeslots as possible. Automatically allocate participants to a
     slot based on their chosen availabilities. Returns dataframe containing the participants'
@@ -123,11 +123,10 @@ def autoallocate(file, transpose=True, allocate_type='single', filename='', expo
     allocations = empty_df.copy()
     allocations.columns = allocations.columns.str.split(', ').str[0]  # Only dates as header row
 
-    if transpose:
-        allocations = pd.DataFrame.transpose(allocations)
-        allocations = allocations.rename(columns={allocations.columns[0]: 'Timeslots' })
-        allocations.index.names = ['Date']
-        allocations = allocations.reset_index(level='Date')
+    allocations = pd.DataFrame.transpose(allocations)
+    allocations = allocations.rename(columns={allocations.columns[0]: 'Timeslots' })
+    allocations.index.names = ['Date']
+    allocations = allocations.reset_index(level='Date')
 
     # Export
     if export_to == 'csv':
@@ -144,6 +143,32 @@ def autoallocate(file, transpose=True, allocate_type='single', filename='', expo
             print(f'{participant}' + ' could not be allocated.')
     if len(np.intersect1d(participants, assignments)) == len(participants):
         print('All participants successfully allocated.')
+
+
+def get_attendees(schedules, emails):
+    """
+    Append attendee emails to scheduled dataframe.
+
+    Example
+    -------
+    file = '../../../Student RAs Availability/Doodle_3to30Nov.xls'
+    schedules = autocalendar.autoallocate(file, allocate_type='multiple', export_to=False)
+
+    emails = {'Kim': 'KTAN112@e.ntu.edu.sg',
+              'Jenevieve': 'JENE0003@e.ntu.edu.sg',
+              'Xue Yi': 'xueyi1328@gmail.com',
+              'Cheryl': 'CCHEW009@e.ntu.edu.sg'}
+    attendees = get_attendees(schedules, emails)
+    """
+
+    emails_list = []
+    for row in schedules['Participant']:
+        email = ''.join([contact for name, contact in emails.items() if name == row])
+        emails_list.append(email)
+    schedules = pd.concat([schedules, pd.Series(emails_list)], axis=1, names=['Email'])
+    attendees = schedules.set_axis([*schedules.columns[:-1], 'Email'], axis=1, inplace=False)
+
+    return attendees
 
 
 # =============================================================================
@@ -273,7 +298,7 @@ def extract_info(participants, date_col, time_col, location_col=None, starttime_
 
 
 def create_event(event_name, description, date, start, end, location, timezone, creator_email,
-                 calendar_id='primary'):
+                 calendar_id='primary', attendees=None):
     """Create event in terms of Google Calendar API.
 
     See also https://developers.google.com/calendar/v3/reference/events
@@ -294,6 +319,9 @@ def create_event(event_name, description, date, start, end, location, timezone, 
         'dateTime': datetime.combine(date, end).strftime("%Y-%m-%dT%H:%M:%S"),
         'timeZone': timezone,
       },
+      'attendees': [
+            {'email':attendees},
+        ],
       'reminders': {
         'useDefault': False,
         'overrides': [
