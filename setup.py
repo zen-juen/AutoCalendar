@@ -27,10 +27,10 @@ setup(
     name="autocalendar",
     keywords="automation, calendar events, google calendar api, automatic scheduling, Python",
     url="https://github.com/zen-juen/AutoCalendar",
-    download_url = 'https://github.com/zen-juen/AutoCalendar/archive/v0.0.2.tar.gz',
+    download_url = 'https://github.com/zen-juen/AutoCalendar/archive/v0.0.3.tar.gz',
     version=find_version(),
     description="A Python automation scheduling system based on the Google Calendar API.",
-    long_description=readme + "\n\n" + history,
+    long_description=readme + "\n\n",
     long_description_content_type="text/markdown",
     license="MIT license",
 
