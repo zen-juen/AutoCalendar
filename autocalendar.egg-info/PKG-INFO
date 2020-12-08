@@ -1,12 +1,12 @@
 Metadata-Version: 2.1
 Name: autocalendar
-Version: 0.0.3
+Version: 0.0.4
 Summary: A Python automation scheduling system based on the Google Calendar API.
 Home-page: https://github.com/zen-juen/AutoCalendar
 Author: Zen Juen Lau
 Author-email: lauzenjuen@gmail.com
 License: MIT license
-Download-URL: https://github.com/zen-juen/AutoCalendar/archive/v0.0.3.tar.gz
+Download-URL: https://github.com/zen-juen/AutoCalendar/archive/v0.0.4.tar.gz
 Description: # AutoCalendar :calendar:
         **AutoCalendar** is a Python scheduling automation system based on the Google Calendar API ideal for **scheduling research participants**.
         
