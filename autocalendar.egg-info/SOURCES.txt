@@ -1,0 +1,12 @@
+README.md
+setup.cfg
+setup.py
+autocalendar/__init__.py
+autocalendar/autocalendar.py
+autocalendar/example.py
+autocalendar.egg-info/PKG-INFO
+autocalendar.egg-info/SOURCES.txt
+autocalendar.egg-info/dependency_links.txt
+autocalendar.egg-info/not-zip-safe
+autocalendar.egg-info/requires.txt
+autocalendar.egg-info/top_level.txt
