@@ -1,6 +1,6 @@
 numpy
 pandas
-pickle
+pickle-mixin
 os
 dateutil
 datetime
