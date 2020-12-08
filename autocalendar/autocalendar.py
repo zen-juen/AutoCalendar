@@ -145,31 +145,6 @@ def autoallocate(file, allocate_type='single', filename='', export_to='xlsx'):
         print('All participants successfully allocated.')
 
 
-def get_attendees(schedules, emails):
-    """
-    Append attendee emails to scheduled dataframe.
-
-    Example
-    -------
-    file = '../../../Student RAs Availability/Doodle_3to30Nov.xls'
-    schedules = autocalendar.autoallocate(file, allocate_type='multiple', export_to=False)
-
-    emails = {'Kim': 'KTAN112@e.ntu.edu.sg',
-              'Jenevieve': 'JENE0003@e.ntu.edu.sg',
-              'Xue Yi': 'xueyi1328@gmail.com',
-              'Cheryl': 'CCHEW009@e.ntu.edu.sg'}
-    attendees = get_attendees(schedules, emails)
-    """
-
-    emails_list = []
-    for row in schedules['Participant']:
-        email = ''.join([contact for name, contact in emails.items() if name == row])
-        emails_list.append(email)
-    schedules = pd.concat([schedules, pd.Series(emails_list)], axis=1, names=['Email'])
-    attendees = schedules.set_axis([*schedules.columns[:-1], 'Email'], axis=1, inplace=False)
-
-    return attendees
-
 
 # =============================================================================
 # Initialize Google API Console Credentials
@@ -186,6 +161,8 @@ def setup_oath(token_path, client_path):
     if os.path.exists(token_path):
         with open(token_path, 'rb') as token:
             credentials = pickle.load(token)
+    else:
+        credentials = None
 
     # If there are no (valid) credentials available, log in and enter authorization code manually
     if not credentials or not credentials.valid:
@@ -249,11 +226,11 @@ def extract_info(participants, date_col, time_col, location_col=None, starttime_
 
     # Format date
     dates = np.array(to_add[date_col])
-    dates_list = np.array([])
-    for i in dates:
-        if isinstance(i, str):  # convert to datetime obj
-            date = dateutil.parser.parse(i, dayfirst=True).date()
-            dates_list = np.append(dates_list, date)
+#    dates_list = np.array([])
+#    for i in dates:
+#        if isinstance(i, str):  # convert to datetime obj
+#            date = dateutil.parser.parse(i, dayfirst=True).date()
+#            dates_list = np.append(dates_list, date)
 
     # Format location (optional)
     if location_col:
@@ -292,13 +269,13 @@ def extract_info(participants, date_col, time_col, location_col=None, starttime_
         end_points = np.append(end_points, endtime_col)
 
     if location_col:
-        return dates_list, start_points, end_points, location, to_add
+        return dates, start_points, end_points, location, to_add
     else:
-        return dates_list, start_points, end_points, to_add
+        return dates, start_points, end_points, to_add
 
 
 def create_event(event_name, description, date, start, end, location, timezone, creator_email,
-                 calendar_id='primary', attendees=None):
+                 calendar_id='primary'):
     """Create event in terms of Google Calendar API.
 
     See also https://developers.google.com/calendar/v3/reference/events
@@ -319,9 +296,6 @@ def create_event(event_name, description, date, start, end, location, timezone, 
         'dateTime': datetime.combine(date, end).strftime("%Y-%m-%dT%H:%M:%S"),
         'timeZone': timezone,
       },
-      'attendees': [
-            {'email':attendees},
-        ],
       'reminders': {
         'useDefault': False,
         'overrides': [
