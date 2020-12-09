@@ -1,7 +1,6 @@
 numpy
 pandas
 pickle-mixin
-os
 dateutil
 datetime
 apiclient
