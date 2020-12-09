@@ -11,7 +11,7 @@ import google.auth
 import pkg_resources
 
 # Info
-__version__ = "0.0.6"
+__version__ = "0.0.7"
 
 
 # Maintainer info
