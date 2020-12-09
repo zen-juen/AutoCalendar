@@ -11,7 +11,7 @@ import google.auth
 import pkg_resources
 
 # Info
-__version__ = "0.0.7"
+__version__ = "0.0.8"
 
 
 # Maintainer info
@@ -48,6 +48,8 @@ Full bibtex reference:
 # Aliases for citation
 __citation__ = __cite__
 
+# Import
+from .autocalendar import autoallocate, setup_oath, preprocess_file, extract_info, create_event, add_event
 
 # =============================================================================
 # Helper functions to retrieve info
