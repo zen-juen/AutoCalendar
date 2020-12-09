@@ -17,7 +17,7 @@ def find_version():
 
 
 # Dependencies
-requirements = ["numpy", "pandas", "pickle-mixin", "os-sys", "dateutil", "datetime", "apiclient", "google", "google_auth_oauthlib"]
+requirements = ["numpy", "pandas", "pickle-mixin", "dateutil", "datetime", "apiclient", "google", "google_auth_oauthlib"]
 
 
 # Setup
