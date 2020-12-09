@@ -1,6 +1,5 @@
 numpy
 pandas
 pickle-mixin
-googleapiclient
 google
 google_auth_oauthlib
