@@ -37,8 +37,9 @@ def autoallocate(file, allocate_type='single', filename='', export_to='xlsx'):
 
     Examples
     --------
-    file = '../../../Student RAs Availability/Doodle_3to30Nov.xls'
-    allocations = autocalendar.autoallocate(file, transpose=False, allocate_type='multiple', export_to=False)
+    >>> import autocalendar
+    >>> file = 'doodle_poll.xls'  # from the data folder in the repo
+    >>> autocalendar.autoallocate(file, allocate_type='multiple', export_to=False)
     """
 
     # Read and parse doodle poll
@@ -130,9 +131,9 @@ def autoallocate(file, allocate_type='single', filename='', export_to='xlsx'):
 
     # Export
     if export_to == 'csv':
-        allocations.to_csv(filename + '.csv')
+        allocations.to_csv(filename + '.csv', index=False)
     elif export_to == 'xlsx':
-        allocations.to_excel(filename + '.xlsx')
+        allocations.to_excel(filename + '.xlsx', index=False)
     elif export_to is False:
         return allocations
 
@@ -192,6 +193,7 @@ def preprocess_file(file, header_row=1):
     """
 
     participants = pd.read_excel(file)
+    print('Parsing information... Please wait as this can take a while.')
 
     if header_row > 1:
         participants.columns = participants.iloc[header_row-2]
